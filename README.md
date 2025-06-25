@@ -1,170 +1,150 @@
-# ABCD_Blockhain_DSR_Algo
+# MANET Blockchain Routing Protocol (PoPW-Based)
 
-✅ What to Build Instead: Lightweight PoPW Blockchain
-Feature	Design
-Consensus	PoPW (based on path scores & signatures)
-Block	A record of a trusted routing path
-Hashing	BLAKE3
-Signatures	Ed25519
-Encryption	ChaCha20-Poly1305 (if needed)
-Storage	Only recent blocks, pruned often
-Propagation	Gossip, opportunistic syncing
-Programming	Optional rule-based filters, no smart contracts
+## 📌 Project Title:
 
+**Energy-Aware Trust-Driven Lightweight Blockchain Routing Protocol for Mobile Ad-Hoc Networks**
 
-🧱 Recommended Architecture
+## 📘 Abstract:
 
-    Language: Rust or Go
-
-    Design Pattern: Event-driven or async message loop
-
-    Sync Mechanism: Opportunistic gossip + store recent blocks
-
-    Block Format: CBOR or flat JSON → then encrypted + signed
-
-    Security: Use Ed25519 for signatures, BLAKE3 for hashing
-
-    Communication: UDP multicast or mesh-over-TCP tunnels
-
-
-This is an excellent, well-thought-out design for a **lightweight, decentralized, and secure MANET-oriented blockchain system**. You're blending:
-
-* **Dynamic subnet clustering**
-* **Energy-aware leadership**
-* **Trust-weighted node behavior**
-* **Blockchain-based routing abstraction**
-* **Redundancy via shadow nodes**
-
-Let me now distill your system into clear **modules**, highlight **pros and challenges**, and offer **implementation advice**.
+This protocol defines a lightweight, secure, and decentralized blockchain framework for routing in Mobile Ad-hoc Networks (MANETs). It integrates energy awareness (Logical Battery), trust evaluation, and efficient pathworthiness scoring to make routing decisions while maintaining security through cryptographic primitives and node-level blockchain synchronization.
 
 ---
 
-## ✅ Your Design in Modular Blocks
+## 🧱 Architecture Overview
 
-### 🔷 1. **Sub-network Formation**
+### 🔷 Sub-Network Cluster Design:
 
-* Divide `n` MANET nodes into `n/4` subnetworks
+* The total MANET (`n` nodes) is divided into **n/4 subnetworks**.
 
-  * ✅ Each subnetwork has ≥ 4 nodes
-  * ✅ Subnet assigned a **Head Blockchain Node (HBN)**
+  * Each subnetwork contains **>= 4 nodes**.
+  * One node in each subnetwork becomes the **Head Blockchain Node (HBN)**.
 
-### 🔷 2. **Blockchain Node Responsibilities**
+### 🧠 Responsibilities of Head Blockchain Node (HBN):
 
-* Stores:
+* Maintain the **local blockchain ledger**:
 
-  * `NodeJoinExitLogs`
-  * `PathUsageData`
-  * `TrustDictionary`
-  * `LogicalBatteryTable`
-* Handles:
+  * Node join/leave logs
+  * Path trust records
+  * Logical Battery status of all nodes
+  * Packet tracking via hashes
+* Respond to **routing requests** from local nodes.
+* Handle **inter-subnet routing** with abstraction.
+* Monitor health and perform **leadership transfer** when needed.
 
-  * Path selection
-  * Packet numbering and monitoring (via hashes)
-  * Abstract routing if destination is outside subnetwork
+### 👥 Shadow Blockchain Nodes:
 
-### 🔷 3. **Trust Model**
+* The two nodes with the lowest value of:
 
-```text
-Trust = Acks - NAcks - 3×FalseAcks - LeaveCount
+  `f(LogicalBattery) × f(Trust)`
+
+  are chosen as **shadow nodes**.
+* Shadow nodes replicate the HBN ledger.
+* When HBN reaches **<= 3/4 LogicalBattery**, a **handover** occurs.
+
+### 🔄 Trust Model:
+
+```
+Trust = Acks - NAcks - 3 × FalseAcks - LeaveCount
 ```
 
-* ✅ Encourages consistent, honest behavior
-* ✅ Penalizes spammers or malicious nodes
+* Trust is dynamic and updated with real-time feedback.
 
-### 🔷 4. **Logical Battery Monitoring**
+### 🔋 Logical Battery:
 
-* Every 100s → send **beacons**
-* If node fails to respond → reduce:
+* Every 100 seconds:
 
-  * Node’s battery score: −1/10
-  * HBN’s own score: −1/15 (lower penalty)
-* LogicalBattery used in **f(x) = 1 / (1 + x)**
+  * HBN sends beacon packets to all subnet nodes.
+  * If a node does not respond, LogicalBattery reduces:
 
-### 🔷 5. **Shadow Nodes (High Availability)**
+    * Normal node: `−1/10`
+    * HBN: `−1/15`
 
-* Based on lowest `f(LogicalBattery) × f(Trust)` scores
-* Two nodes selected to **replicate HBN ledger**
-* One of them will **promote to HBN** when battery of current HBN ≤ 3/4
+### 📦 Routing Process:
 
-### 🔷 6. **Routing via Blockchain**
+* Node requests path from HBN.
+* HBN calculates PoPW score:
 
-* HBN handles path requests
-* Assigns hash → listens for delivery confirmation
-* If destination outside local subnet:
+```
+Score = f(minLogicalBattery) × f(minTrust) × ((TotalTrust/NodeCount) × hops/(1 + hops))
+```
 
-  * Abstracts destination
-  * Relays via HBN-to-HBN communication
-  * Prevents topology leakage
+* Assigns a **hash ID** to the packet.
+* Monitors for delivery feedback via hash-based acknowledgment.
+* For inter-subnet routing:
 
----
-
-## ✅ Advantages of This Design
-
-| Category                   | Advantage                                                                   |
-| -------------------------- | --------------------------------------------------------------------------- |
-| ✅ **Scalability**          | Clusters + HBNs avoid flooding the network                                  |
-| ✅ **Energy Efficiency**    | LogicalBattery encourages low-overhead routing & leadership                 |
-| ✅ **Security**             | Trust scores + replication guards against node failure & malicious activity |
-| ✅ **Topology Abstraction** | Inter-HBN communication hides internal paths, enhancing privacy             |
-| ✅ **Redundancy**           | Shadow blockchain nodes ensure failover                                     |
-| ✅ **Custom Blockchain**    | Tailored structure avoids Ethereum’s overhead                               |
+  * HBNs exchange abstracted messages, hiding node identities and topology.
 
 ---
 
-## ⚠️ Key Challenges & Suggestions
+## 🔐 Cryptographic Stack
 
-| Challenge                       | Suggestion                                                                                |
-| ------------------------------- | ----------------------------------------------------------------------------------------- |
-| 🔄 Dynamic node entry/exit      | Use **heartbeat + timeout** strategy for beacon responses                                 |
-| 🧮 Shadow node calculation      | Do not recalculate too frequently → use fixed intervals (e.g. every 300s)                 |
-| 📊 Battery feedback             | Consider **smoothing battery estimates** using EWMA (Exponential Weighted Moving Average) |
-| ⏱️ Beacon collisions            | Use **slotted timing or randomized delays** to avoid beacon flood at scale                |
-| 💾 Storage in HBN               | Use **rolling block history** to prevent blockchain bloat (e.g., TTL per block)           |
-| 📶 Syncing with shadows         | Use **Merkle root diffs** or **compact hash chain deltas**                                |
-| 🔐 Privacy leakage in inter-HBN | Always **abstract node IDs** using pseudonyms or temporary IDs                            |
+| Component  | Algorithm         |
+| ---------- | ----------------- |
+| Hashing    | BLAKE3            |
+| Encryption | ChaCha20-Poly1305 |
+| Signing    | Ed25519           |
+| Encoding   | CBOR / Protobuf   |
 
 ---
 
-## 🔧 Implementation Tips (Language & Data Structures)
+## 🔧 Technology Stack
 
-| Module              | Tools                                                       |
-| ------------------- | ----------------------------------------------------------- |
-| Ledger structure    | Rust (BTreeMap / HashMap for TrustDict, BatteryTable)       |
-| Subnet partitioning | K-means-like heuristic on location/ID/random seed           |
-| Beacon module       | Async timer loop (Rust tokio / Go goroutines)               |
-| Shadow selection    | Store scores in min-heap or ordered map                     |
-| Hashes              | Use BLAKE3 for packet IDs                                   |
-| Signing             | Ed25519 signatures on trust updates, beacon logs            |
-| Packet abstraction  | Use compact formats (CBOR/Protobuf) with encrypted metadata |
+| Layer                 | Tool / Framework            |
+| --------------------- | --------------------------- |
+| Language              | Rust / Go                   |
+| Communication         | UDP / DTN / Gossip Protocol |
+| Blockchain Data Store | Custom lightweight ledger   |
+| Packet Encoding       | CBOR / JSON / Protobuf      |
+| Testing & Simulation  | Python + ns-3 (optional)    |
 
 ---
 
-## 🧠 Optional Enhancements
+## 📐 System Diagrams
 
-| Feature                             | Description                                                                    |
-| ----------------------------------- | ------------------------------------------------------------------------------ |
-| 🔐 Node pseudonym rotation          | Periodically change node IDs to prevent tracking                               |
-| 🧪 Gossip-based sync                | Nodes within subnet sync trust data via gossip instead of full sync            |
-| 🔄 Partial blockchain re-validation | When shadow becomes HBN, re-verify last N blocks                               |
-| 🔁 Trust aging                      | Trust scores decay over time unless reinforced (prevents stale data dominance) |
-| 📡 Inter-HBN dynamic routing        | HBNs could maintain **gateway peer table** with TTL to propagate efficiently   |
+### 🔸 Sub-Network and Role Assignment
+
+![Subnet Role Diagram](images/subnet_roles.png)
+
+### 🔸 Blockchain Lifecycle and Handover
+
+![Blockchain Handover](images/blockchain_handover.png)
+
+### 🔸 Routing and Pathworthiness Flow
+
+![Routing Flow](images/routing_flow.png)
 
 ---
 
-## ✅ Final Thoughts
+## 🧠 Key Protocol Benefits
 
-Your model is **robust**, **energy-aware**, and **tailored to the realities of MANETs** — far better than using a generic L1 blockchain.
+| Benefit                | Explanation                                    |
+| ---------------------- | ---------------------------------------------- |
+| 🔄 Dynamic Leadership  | HBN role is rotated based on battery health    |
+| ⚖️ Trust-Based Routing | Avoids malicious/unreliable nodes              |
+| 🛡️ Privacy Respecting | Abstracts topology in inter-subnet routing     |
+| 💾 Lightweight Ledger  | Rolling blockchain model reduces storage needs |
+| 🔐 Secure by Design    | Modern cryptographic primitives used           |
 
-You're combining:
+---
 
-* Lightweight **blockchain design**
-* **Trust-based consensus**
-* **Routing control**
-* **Security with minimal data exposure**
+## 🔚 Conclusion
 
-Would you like:
+This protocol provides an efficient, secure, and lightweight blockchain routing strategy for highly dynamic MANETs. It avoids traditional heavyweight consensus models, leverages node-level awareness, and enforces routing reliability through path trustworthiness, all while being energy-efficient.
 
-* A **data structure layout** for blocks and trust tables?
-* A **code template** (Rust or Go) to begin the blockchain logic?
-* Or a **flowchart** of how leadership election + routing decision happens?
+> ✅ Ready for implementation in simulation environments and hardware testbeds.
 
+---
+
+## 📁 Suggested README.md Usage
+
+To embed diagrams:
+
+```markdown
+![Subnet Role Diagram](images/subnet_roles.png)
+![Blockchain Handover](images/blockchain_handover.png)
+![Routing Flow](images/routing_flow.png)
+```
+
+Make sure to place the `images/` folder next to your README.
+
+Would you like help generating these image diagrams next?
