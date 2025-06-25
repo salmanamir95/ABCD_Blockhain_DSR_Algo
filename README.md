@@ -127,6 +127,40 @@ Score = f(minLogicalBattery) × f(minTrust) × ((TotalTrust/NodeCount) × hops/(
 
 ---
 
+## 🏗️ Blockchain Architecture
+
+### 📄 Block Structure:
+
+Each block contains:
+
+* Block ID (hash of previous block)
+* Timestamp
+* Node join/leave event logs
+* Trust updates
+* Battery status changes
+* Route allocations with packet hash IDs
+* Signatures from HBN (Ed25519)
+
+### 🔁 Blockchain Lifecycle:
+
+* Rolling ledger with last N blocks retained (to reduce storage)
+* On HBN handover:
+
+  * Ledger syncs with shadow node
+  * Only verified blocks accepted
+* Nodes can verify updates using:
+
+  * Hash chains
+  * Lightweight Merkle Trees (optional)
+
+### 🔒 Security Assurance:
+
+* Tamper-evident blocks via BLAKE3
+* Authenticated route claims
+* Encrypted inter-node messages
+
+---
+
 ## 🔚 Conclusion
 
 This protocol provides an efficient, secure, and lightweight blockchain routing strategy for highly dynamic MANETs. It avoids traditional heavyweight consensus models, leverages node-level awareness, and enforces routing reliability through path trustworthiness, all while being energy-efficient.
